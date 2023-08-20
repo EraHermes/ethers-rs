@@ -93,9 +93,17 @@ impl WsClient {
 
         let res = rx.await.map_err(|_| WsClientError::UnexpectedClose)??;
         tracing::trace!(res = %res, "Received response from request manager");
-        let resp = serde_json::from_str(res.get())?;
-        tracing::trace!("Deserialization success");
-        Ok(resp)
+        let resp = serde_json::from_str(res.get());
+        match resp {
+            Some(resp) => {
+                tracing::trace!("Deserialization success");
+                return Ok(resp);
+            }
+            Err(e) => {
+                tracing::trace!("Deserialization failed");
+                return Err(WsClientError::Serde(e));
+            }
+        }
     }
 }
 
